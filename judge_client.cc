@@ -44,7 +44,6 @@
 //#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <mysql/mysql.h>
 #include <assert.h>
 #include "okcalls.h"
 
@@ -112,7 +111,6 @@ static char record_call=0;
 
 //static int sleep_tmp;
 #define ZOJ_COM
-MYSQL *conn;
 
 static char lang_ext[12][8] = { "c", "cc", "pas", "java", "rb", "sh", "py", "php","pl", "cs","m","bas" };
 //static char buf[BUFFER_SIZE];
@@ -598,45 +596,8 @@ void login()
     }
 
 }
-/* write result back to database */
-void _update_solution_mysql(int solution_id, int result, int time, int memory,
-                            int sim, int sim_s_id,double pass_rate)
-{
-    char sql[BUFFER_SIZE];
-    if(oi_mode)
-    {
-        sprintf(
-            sql,
-            "UPDATE solution SET result=%d,time=%d,memory=%d,judgetime=NOW(),pass_rate=%f WHERE solution_id=%d LIMIT 1%c",
-            result, time, memory, pass_rate,solution_id, 0);
-    }
-    else
-    {
-        sprintf(
-            sql,
-            "UPDATE solution SET result=%d,time=%d,memory=%d,judgetime=NOW() WHERE solution_id=%d LIMIT 1%c",
-            result, time, memory, solution_id, 0);
-    }
-    //      printf("sql= %s\n",sql);
-    if (mysql_real_query(conn, sql, strlen(sql)))
-    {
-        //              printf("..update failed! %s\n",mysql_error(conn));
-    }
-    if (sim)
-    {
-        sprintf(
-            sql,
-            "insert into sim(s_id,sim_s_id,sim) values(%d,%d,%d) on duplicate key update  sim_s_id=%d,sim=%d",
-            solution_id, sim_s_id, sim, sim_s_id, sim);
-        //      printf("sql= %s\n",sql);
-        if (mysql_real_query(conn, sql, strlen(sql)))
-        {
-            //              printf("..update failed! %s\n",mysql_error(conn));
-        }
 
-    }
 
-}
 void _update_solution_http(int solution_id, int result, int time, int memory,int sim, int sim_s_id,double pass_rate)
 {
     const char  * cmd=" wget --post-data=\"update_solution=1&sid=%d&result=%d&time=%d&memory=%d&sim=%d&simid=%d&pass_rate=%f\" --load-cookies=cookie --save-cookies=cookie --keep-session-cookies -q -O - \"%s/admin/problem_judge.php\"";
@@ -651,45 +612,8 @@ void update_solution(int solution_id, int result, int time, int memory,int sim, 
     {
         _update_solution_http( solution_id,  result,  time,  memory, sim, sim_s_id,pass_rate);
     }
-    else
-    {
-        _update_solution_mysql( solution_id,  result,  time,  memory, sim, sim_s_id,pass_rate);
-    }
 }
 /* write compile error message back to database */
-void _addceinfo_mysql(int solution_id)
-{
-    char sql[(1 << 16)], *end;
-    char ceinfo[(1 << 16)], *cend;
-    FILE *fp = fopen("ce.txt", "r");
-    snprintf(sql, (1 << 16) - 1,
-             "DELETE FROM compileinfo WHERE solution_id=%d", solution_id);
-    mysql_real_query(conn, sql, strlen(sql));
-    cend = ceinfo;
-    while (fgets(cend, 1024, fp))
-    {
-        cend += strlen(cend);
-        if (cend - ceinfo > 40000)
-            break;
-    }
-    cend = 0;
-    end = sql;
-    strcpy(end, "INSERT INTO compileinfo VALUES(");
-    end += strlen(sql);
-    *end++ = '\'';
-    end += sprintf(end, "%d", solution_id);
-    *end++ = '\'';
-    *end++ = ',';
-    *end++ = '\'';
-    end += mysql_real_escape_string(conn, end, ceinfo, strlen(ceinfo));
-    *end++ = '\'';
-    *end++ = ')';
-    *end = 0;
-    //      printf("%s\n",ceinfo);
-    if (mysql_real_query(conn, sql, end - sql))
-        printf("%s\n", mysql_error(conn));
-    fclose(fp);
-}
 // urlencoded function copied from http://www.geekhideout.com/urlcode.shtml
 /* Converts a hex character to its integer value */
 char from_hex(char ch)
@@ -758,44 +682,6 @@ void addceinfo(int solution_id)
     {
         _addceinfo_http(solution_id);
     }
-    else
-    {
-        _addceinfo_mysql(solution_id);
-    }
-}
-/* write runtime error message back to database */
-void _addreinfo_mysql(int solution_id,const char * filename)
-{
-    char sql[(1 << 16)], *end;
-    char reinfo[(1 << 16)], *rend;
-    FILE *fp = fopen(filename, "r");
-    snprintf(sql, (1 << 16) - 1,
-             "DELETE FROM runtimeinfo WHERE solution_id=%d", solution_id);
-    mysql_real_query(conn, sql, strlen(sql));
-    rend = reinfo;
-    while (fgets(rend, 1024, fp))
-    {
-        rend += strlen(rend);
-        if (rend - reinfo > 40000)
-            break;
-    }
-    rend = 0;
-    end = sql;
-    strcpy(end, "INSERT INTO runtimeinfo VALUES(");
-    end += strlen(sql);
-    *end++ = '\'';
-    end += sprintf(end, "%d", solution_id);
-    *end++ = '\'';
-    *end++ = ',';
-    *end++ = '\'';
-    end += mysql_real_escape_string(conn, end, reinfo, strlen(reinfo));
-    *end++ = '\'';
-    *end++ = ')';
-    *end = 0;
-    //      printf("%s\n",ceinfo);
-    if (mysql_real_query(conn, sql, end - sql))
-        printf("%s\n", mysql_error(conn));
-    fclose(fp);
 }
 
 void _addreinfo_http(int solution_id,const char * filename)
@@ -832,10 +718,6 @@ void addreinfo(int solution_id)
     {
         _addreinfo_http(solution_id,"error.out");
     }
-    else
-    {
-        _addreinfo_mysql(solution_id,"error.out");
-    }
 }
 
 
@@ -847,10 +729,6 @@ void adddiffinfo(int solution_id)
     {
         _addreinfo_http(solution_id,"diff.out");
     }
-    else
-    {
-        _addreinfo_mysql(solution_id,"diff.out");
-    }
 }
 void addcustomout(int solution_id)
 {
@@ -860,28 +738,8 @@ void addcustomout(int solution_id)
     {
         _addreinfo_http(solution_id,"user.out");
     }
-    else
-    {
-        _addreinfo_mysql(solution_id,"user.out");
-    }
 }
 
-void _update_user_mysql(char * user_id)
-{
-    char sql[BUFFER_SIZE];
-    sprintf(
-        sql,
-        "UPDATE `users` SET `solved`=(SELECT count(DISTINCT `problem_id`) FROM `solution` WHERE `user_id`=\'%s\' AND `result`=\'4\') WHERE `user_id`=\'%s\'",
-        user_id, user_id);
-    if (mysql_real_query(conn, sql, strlen(sql)))
-        write_log(mysql_error(conn));
-    sprintf(
-        sql,
-        "UPDATE `users` SET `submit`=(SELECT count(*) FROM `solution` WHERE `user_id`=\'%s\') WHERE `user_id`=\'%s\'",
-        user_id, user_id);
-    if (mysql_real_query(conn, sql, strlen(sql)))
-        write_log(mysql_error(conn));
-}
 void _update_user_http(char * user_id)
 {
 
@@ -896,10 +754,6 @@ void update_user(char  * user_id)
     {
         _update_user_http(user_id);
     }
-    else
-    {
-        _update_user_mysql(user_id);
-    }
 }
 
 void _update_problem_http(int pid)
@@ -909,31 +763,12 @@ void _update_problem_http(int pid)
     //fscanf(fjobs,"%d",&ret);
     pclose(fjobs);
 }
-void _update_problem_mysql(int p_id)
-{
-    char sql[BUFFER_SIZE];
-    sprintf(
-        sql,
-        "UPDATE `problem` SET `accepted`=(SELECT count(*) FROM `solution` WHERE `problem_id`=\'%d\' AND `result`=\'4\') WHERE `problem_id`=\'%d\'",
-        p_id, p_id);
-    if (mysql_real_query(conn, sql, strlen(sql)))
-        write_log(mysql_error(conn));
-    sprintf(
-        sql,
-        "UPDATE `problem` SET `submit`=(SELECT count(*) FROM `solution` WHERE `problem_id`=\'%d\') WHERE `problem_id`=\'%d\'",
-        p_id, p_id);
-    if (mysql_real_query(conn, sql, strlen(sql)))
-        write_log(mysql_error(conn));
-}
+
 void update_problem(int pid)
 {
     if(http_judge)
     {
         _update_problem_http(pid);
-    }
-    else
-    {
-        _update_problem_mysql(pid);
     }
 }
 int compile(int lang)
@@ -1083,51 +918,6 @@ int get_proc_status(int pid, const char * mark)
         fclose(pf);
     return ret;
 }
-int init_mysql_conn()
-{
-
-
-    conn = mysql_init(NULL);
-    //mysql_real_connect(conn,host_name,user_name,password,db_name,port_number,0,0);
-    const char timeout = 30;
-    mysql_options(conn, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
-
-    if (!mysql_real_connect(conn, host_name, user_name, password, db_name,
-                            port_number, 0, 0))
-    {
-        write_log("%s", mysql_error(conn));
-        return 0;
-    }
-    const char * utf8sql = "set names utf8";
-    if (mysql_real_query(conn, utf8sql, strlen(utf8sql)))
-    {
-        write_log("%s", mysql_error(conn));
-        return 0;
-    }
-    return 1;
-}
-void _get_solution_mysql(int solution_id, char * work_dir, int lang)
-{
-    char sql[BUFFER_SIZE], src_pth[BUFFER_SIZE];
-    // get the source code
-    MYSQL_RES *res;
-    MYSQL_ROW row;
-    sprintf(sql, "SELECT source FROM source_code WHERE solution_id=%d",
-            solution_id);
-    mysql_real_query(conn, sql, strlen(sql));
-    res = mysql_store_result(conn);
-    row = mysql_fetch_row(res);
-
-
-    // create the src file
-    sprintf(src_pth, "Main.%s", lang_ext[lang]);
-    if (DEBUG)
-        printf("Main=%s", src_pth);
-    FILE *fp_src = fopen(src_pth, "w");
-    fprintf(fp_src, "%s", row[0]);
-    mysql_free_result(res);
-    fclose(fp_src);
-}
 void _get_solution_http(int solution_id, char * work_dir, int lang)
 {
     char  src_pth[BUFFER_SIZE];
@@ -1151,37 +941,9 @@ void get_solution(int solution_id, char * work_dir, int lang)
     {
         _get_solution_http(solution_id,  work_dir, lang) ;
     }
-    else
-    {
-        _get_solution_mysql(solution_id, work_dir, lang) ;
-    }
-
 
 }
 
-void _get_custominput_mysql(int solution_id, char * work_dir)
-{
-    char sql[BUFFER_SIZE], src_pth[BUFFER_SIZE];
-    // get the source code
-    MYSQL_RES *res;
-    MYSQL_ROW row;
-    sprintf(sql, "SELECT input_text FROM custominput WHERE solution_id=%d",
-            solution_id);
-    mysql_real_query(conn, sql, strlen(sql));
-    res = mysql_store_result(conn);
-    row = mysql_fetch_row(res);
-    if(row!=NULL)
-    {
-
-        // create the src file
-        sprintf(src_pth, "data.in");
-        FILE *fp_src = fopen(src_pth, "w");
-        fprintf(fp_src, "%s", row[0]);
-        fclose(fp_src);
-
-    }
-    mysql_free_result(res);
-}
 void _get_custominput_http(int solution_id, char * work_dir)
 {
     char  src_pth[BUFFER_SIZE];
@@ -1203,36 +965,9 @@ void get_custominput(int solution_id, char * work_dir)
     {
         _get_custominput_http(solution_id,  work_dir) ;
     }
-    else
-    {
-        _get_custominput_mysql(solution_id, work_dir) ;
-    }
 }
 
 
-
-void _get_solution_info_mysql(int solution_id, int & p_id, char * user_id, int & lang)
-{
-
-
-    MYSQL_RES *res;
-    MYSQL_ROW row;
-
-    char sql[BUFFER_SIZE];
-    // get the problem id and user id from Table:solution
-    sprintf(
-        sql,
-        "SELECT problem_id, user_id, language FROM solution where solution_id=%d",
-        solution_id);
-    //printf("%s\n",sql);
-    mysql_real_query(conn, sql, strlen(sql));
-    res = mysql_store_result(conn);
-    row = mysql_fetch_row(res);
-    p_id = atoi(row[0]);
-    strcpy(user_id, row[1]);
-    lang = atoi(row[2]);
-    mysql_free_result(res);
-}
 
 void _get_solution_info_http(int solution_id, int & p_id, char * user_id, int & lang)
 {
@@ -1254,31 +989,8 @@ void get_solution_info(int solution_id, int & p_id, char * user_id, int & lang)
     {
         _get_solution_info_http(solution_id,p_id,user_id,lang);
     }
-    else
-    {
-        _get_solution_info_mysql(solution_id,p_id,user_id,lang);
-    }
 }
 
-
-void _get_problem_info_mysql(int p_id, int & time_lmt, int & mem_lmt, int & isspj)
-{
-    // get the problem info from Table:problem
-    char sql[BUFFER_SIZE];
-    MYSQL_RES *res;
-    MYSQL_ROW row;
-    sprintf(
-        sql,
-        "SELECT time_limit,memory_limit,spj FROM problem where problem_id=%d",
-        p_id);
-    mysql_real_query(conn, sql, strlen(sql));
-    res = mysql_store_result(conn);
-    row = mysql_fetch_row(res);
-    time_lmt = atoi(row[0]);
-    mem_lmt = atoi(row[1]);
-    isspj = (row[2][0] == '1');
-    mysql_free_result(res);
-}
 
 void _get_problem_info_http(int p_id, int & time_lmt, int & mem_lmt, int & isspj)
 {
@@ -1297,10 +1009,6 @@ void get_problem_info(int p_id, int & time_lmt, int & mem_lmt, int & isspj)
     if(http_judge)
     {
         _get_problem_info_http(p_id,time_lmt,mem_lmt,isspj);
-    }
-    else
-    {
-        _get_problem_info_mysql(p_id,time_lmt,mem_lmt,isspj);
     }
 }
 
@@ -2117,7 +1825,7 @@ int main(int argc, char** argv)
 
     init_mysql_conf();
 
-    if (!http_judge&&!init_mysql_conn())
+    if (!http_judge)
     {
         exit(0); //exit if mysql is down
     }
@@ -2184,7 +1892,7 @@ int main(int argc, char** argv)
         update_user(user_id);
         update_problem(p_id);
         if(!http_judge)
-            mysql_close(conn);
+            ;
         if (!DEBUG)
             clean_workdir(work_dir);
         else
@@ -2216,7 +1924,7 @@ int main(int argc, char** argv)
 
         write_log("No such dir:%s!\n", fullpath);
         if(!http_judge)
-            mysql_close(conn);
+            ;
         exit(-1);
     }
 
@@ -2385,7 +2093,7 @@ int main(int argc, char** argv)
     if (DEBUG)
         write_log("result=%d", oi_mode?finalACflg:ACflg);
     if(!http_judge)
-        mysql_close(conn);
+        ;
     if(record_call)
     {
         print_call_array();
