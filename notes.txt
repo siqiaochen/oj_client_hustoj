@@ -1,0 +1,44 @@
+variable
+p_id : problem id
+solution_id : id of current solution
+runner_id : id of current user runner
+isspj : is it a sperical judge
+ACflg: 
+	OJ_AC : Normal (??)
+	OJ_ML :  exceeding Memory Limit
+	OJ_RE : Need More Resources Error (???)
+	OJ_OL : exceeding Output file size limit
+	OJ_TL :  exceeding Time Limit
+	OJ_WA : Wrong Answer
+PEflg:
+
+Interraction with HTML
+
+void _update_solution_http(int solution_id, int result, int time, int memory,int sim, int sim_s_id,double pass_rate) // update solution result to site
+
+void _addreinfo_http(int solution_id,const char * filename) // runtime error
+
+void _addceinfo_http(int solution_id) // compile error
+
+void _update_user_http(char * user_id) // update user
+void _update_problem_http(int pid) // update problem id
+void _get_solution_http(int solution_id, char * work_dir, int lang)
+ // get solution language
+void _get_solution_info_http(int solution_id, int & p_id, char * user_id, int & lang) // get solution code
+
+inputs
+int p_id
+int user_id
+int solution_id
+int solution_lang
+string solution_body
+
+outputs
+string runtime_error
+string complie_error
+int result
+int time
+int memoy
+int sim
+int sim_s_id
+double pass_rate
