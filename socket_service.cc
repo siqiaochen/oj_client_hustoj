@@ -3,29 +3,67 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
+#include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #define MAX_BUF 8192
+#define MAX_CMD 20
+
+void process_message(int sock, char* buf, int len)
+{
+    char input_buf[MAX_BUF];
+    char* cmd;
+    int n = 0;
+    memcpy(input_buf,buf,len);
+    input_buf[len] = 0;
+    cmd = strtok(input_buf," ");
+    if(strcmp(cmd,"echo")==0)
+    {
+        n = write(sock,"echo\n",5);
+        if (n < 0)
+        {
+            perror("ERROR reading from socket");
+            exit(1);
+        }
+    }
+    else if(strcmp(cmd,"exit")==0)
+    {
+        n = write(sock,"bye\n",3);
+        if (n < 0)
+        {
+            perror("ERROR reading from socket");
+            exit(1);
+        }
+        exit(0);
+    }
+    else if(strcmp(cmd,"solve")==0)
+    {
+        ;
+    }
+    else
+    {
+        ;
+    }
+}
 void doprocessing (int sock)
 {
     int n;
     char buffer[MAX_BUF];
     int i = 0, index = 0;
     bzero(buffer,MAX_BUF);
-    n = write(sock,"Hello!\n",7);
     while(1)
     {
         n = read(sock,buffer,MAX_BUF-1-index);
-        index += n;
-        if(index >=MAX_BUF-1)
-        {
-            index = 0;
-        }
         if (n < 0)
         {
             perror("ERROR reading from socket");
             exit(1);
+        }
+        index += n;
+        if(index >=MAX_BUF-1)
+        {
+            index = 0;
         }
         for(i=0;i<index;i++)
         {
@@ -33,7 +71,8 @@ void doprocessing (int sock)
             {
                 printf("Here is the message\n");
                 printf("%*.*s\n", 0, i, buffer);
-                n = write(sock,"\n",1);
+                process_message(sock,buffer,i);
+                //n = write(sock,"\n",1);
                 if (n < 0)
                 {
                     perror("ERROR writing to socket");
