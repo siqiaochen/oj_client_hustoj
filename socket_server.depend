@@ -1,0 +1,51 @@
+# depslib dependency file v1.0
+1396288967 source:/home/arm11/Projects/oj/oj_client_hustoj/base64.cc
+	<stdint.h>
+	<stdlib.h>
+
+1376923612 source:/home/arm11/Projects/oj/oj_client_hustoj/cJSON.c
+	<string.h>
+	<stdio.h>
+	<math.h>
+	<stdlib.h>
+	<float.h>
+	<limits.h>
+	<ctype.h>
+	"cJSON.h"
+
+1376484875 /home/arm11/Projects/oj/oj_client_hustoj/cJSON.h
+
+1396305012 source:/home/arm11/Projects/oj/oj_client_hustoj/data_store.cc
+	<stdio.h>
+
+1395690010 source:/home/arm11/Projects/oj/oj_client_hustoj/judge_client.cc
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<dirent.h>
+	<unistd.h>
+	<time.h>
+	<stdarg.h>
+	<ctype.h>
+	<sys/wait.h>
+	<sys/ptrace.h>
+	<sys/types.h>
+	<sys/user.h>
+	<sys/syscall.h>
+	<sys/time.h>
+	<sys/resource.h>
+	<sys/signal.h>
+	<sys/stat.h>
+	<unistd.h>
+	<assert.h>
+	"okcalls.h"
+
+1395689076 /home/arm11/Projects/oj/oj_client_hustoj/okcalls.h
+	<sys/syscall.h>
+
+1396305140 source:/home/arm11/Projects/oj/oj_client_hustoj/list.cc
+	"list.h"
+
+1395945490 /home/arm11/Projects/oj/oj_client_hustoj/list.h
+	<stdlib.h>
+

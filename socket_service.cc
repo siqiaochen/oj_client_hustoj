@@ -7,14 +7,27 @@
 #include <strings.h>
 #include <unistd.h>
 #include <netinet/in.h>
-#define MAX_BUF 8192
+#include "base64.h"
+#define MAX_BUF 1048576
 #define MAX_CMD 20
-
+int cmd_status;
+char* oj_file = "./judgeclient";
+void init_oj()
+{
+    cmd_status = 0;
+}
+void parse_object()
+{
+    //parse_object()
+}
 void process_message(int sock, char* buf, int len)
 {
     char input_buf[MAX_BUF];
     char* cmd;
+    char* param_b64;
+    char* input_str;
     int n = 0;
+    size_t input_len;
     memcpy(input_buf,buf,len);
     input_buf[len] = 0;
     cmd = strtok(input_buf," \r\n");
@@ -22,7 +35,16 @@ void process_message(int sock, char* buf, int len)
     {
 
         printf("Client Echo\n");
-        n = write(sock,"echo\n\r",6);
+        n = write(sock,"echo\n",5);
+        if (n < 0)
+        {
+            perror("ERROR reading from socket");
+            exit(1);
+        }
+    }
+    else if(strcmp(cmd,"status")==0)
+    {
+        n = write(sock,"starting\n",5);
         if (n < 0)
         {
             perror("ERROR reading from socket");
@@ -43,7 +65,11 @@ void process_message(int sock, char* buf, int len)
     }
     else if(strcmp(cmd,"solve")==0)
     {
-        ;
+        param_b64 = strtok(NULL," \r\n");
+        input_str = (char *)base64_decode((const char*)param_b64,
+                              strlen(param_b64),
+                             &input_len);
+        printf("Client write solve info: %s\n",input_str);
     }
     else
     {
@@ -161,7 +187,6 @@ int main( int argc, char *argv[] )
         if (pid == 0)
         {
             /* This is the client process */
-
             tv.tv_sec = 30;  /* 30 Secs Timeout */
             tv.tv_usec = 0;  // Not init'ing this can cause strange errors
 
