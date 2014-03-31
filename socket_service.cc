@@ -17,10 +17,12 @@ void process_message(int sock, char* buf, int len)
     int n = 0;
     memcpy(input_buf,buf,len);
     input_buf[len] = 0;
-    cmd = strtok(input_buf," ");
+    cmd = strtok(input_buf," \r\n");
     if(strcmp(cmd,"echo")==0)
     {
-        n = write(sock,"echo\n",5);
+
+        printf("Client Echo\n");
+        n = write(sock,"echo\n\r",6);
         if (n < 0)
         {
             perror("ERROR reading from socket");
@@ -29,7 +31,9 @@ void process_message(int sock, char* buf, int len)
     }
     else if(strcmp(cmd,"exit")==0)
     {
-        n = write(sock,"bye\n",3);
+
+        printf("Client Exit\n");
+        n = write(sock,"BYE\n",3);
         if (n < 0)
         {
             perror("ERROR reading from socket");
@@ -43,7 +47,7 @@ void process_message(int sock, char* buf, int len)
     }
     else
     {
-        ;
+        printf("ERROR: can not read command:%s\n",cmd);
     }
 }
 void doprocessing (int sock)
@@ -51,6 +55,7 @@ void doprocessing (int sock)
     int n;
     char buffer[MAX_BUF];
     int i = 0, index = 0;
+
     bzero(buffer,MAX_BUF);
     while(1)
     {
@@ -69,8 +74,6 @@ void doprocessing (int sock)
         {
             if(buffer[i] == '\n')
             {
-                printf("Here is the message\n");
-                printf("%*.*s\n", 0, i, buffer);
                 process_message(sock,buffer,i);
                 //n = write(sock,"\n",1);
                 if (n < 0)
@@ -96,6 +99,7 @@ int main( int argc, char *argv[] )
     int current_connection = 0;
     pid_t result = 0;
     int status =0;
+    struct timeval tv;
     /* First call to socket() function */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
@@ -137,7 +141,8 @@ int main( int argc, char *argv[] )
             result = waitpid(pid, &status, WNOHANG);
             if(result == 0)
             {
-                write(newsockfd,"BUSY\n",4);
+                perror("BUSY");
+                write(newsockfd,"BUSY\n\r",6);
                 close(newsockfd);
                 continue;
             }
@@ -156,6 +161,11 @@ int main( int argc, char *argv[] )
         if (pid == 0)
         {
             /* This is the client process */
+
+            tv.tv_sec = 30;  /* 30 Secs Timeout */
+            tv.tv_usec = 0;  // Not init'ing this can cause strange errors
+
+            setsockopt(newsockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
             close(sockfd);
             doprocessing(newsockfd);
             close(newsockfd);
