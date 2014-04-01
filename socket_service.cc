@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include "base64.h"
+#include "cJSON.h"
 #define MAX_BUF 1048576
 #define MAX_CMD 20
 int cmd_status;
@@ -16,8 +17,63 @@ void init_oj()
 {
     cmd_status = 0;
 }
-void parse_object()
+void writefile( char* fname, char* buf, int size)
 {
+    FILE * fp;
+    fp = fopen(fname,"w");
+    if(fp!=NULL)
+    {
+        fwrite(buf,1,size,fp);
+        fclose(fp);
+    }
+    else
+    {
+        perror("ERROR can not write file");
+        exit(1);
+    }
+}
+void parse_cjson(char* str)
+{
+    cJSON* root = cJSON_Parse(str);
+    cJSON* problem = cJSON_GetObjectItem(root,"problem");
+    char* solution_64 = cJSON_GetObjectItem(problem,"solution")->valuestring;
+    cJSON* unit_tests = cJSON_GetObjectItem(problem,"testcases");
+    char* in_str, *out_str,*in_str_64, *out_str_64;
+    int i = 0;
+    size_t input_len;
+    cJSON* unit_test = NULL;
+    char filename[256];
+    char * solution;
+    sprintf(filename,"~/code/main.c");
+    solution = (char *)base64_decode((const char*)solution_64,
+                              strlen(solution_64),
+                             &input_len);
+    writefile(filename,solution,input_len);
+    free(solution);
+    for(i =0; i< cJSON_GetArraySize(unit_tests);i++)
+    {
+        in_str = NULL;
+        out_str = NULL;
+        unit_test = cJSON_GetArrayItem(unit_tests,i);
+        in_str_64 = cJSON_GetObjectItem(unit_test,"in")->valuestring;
+
+        in_str = (char *)base64_decode((const char*)in_str_64,
+                              strlen(in_str_64),
+                             &input_len);
+        sprintf(filename,"~/testdata/%d.in",i);
+        writefile(filename,in_str,input_len);
+        out_str_64 = cJSON_GetObjectItem(unit_test,"out")->valuestring;
+        out_str = (char *)base64_decode((const char*)out_str_64,
+                              strlen(out_str_64),
+                             &input_len);
+        sprintf(filename,"~/testdata/%d.out",i);
+        writefile(filename,out_str,sizeof(out_str));
+        free(in_str);
+        free(out_str);
+    }
+    // clean memory
+    cJSON_Delete(root);
+
     //parse_object()
 }
 void process_message(int sock, char* buf, int len)
@@ -70,6 +126,7 @@ void process_message(int sock, char* buf, int len)
                               strlen(param_b64),
                              &input_len);
         printf("Client write solve info: %s\n",input_str);
+        free(input_str);
     }
     else
     {
