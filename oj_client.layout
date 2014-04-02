@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Debug" />
+	<File name="judge_client.cc" open="1" top="1" tabpos="0">
+		<Cursor position="42871" topLine="1484" />
+	</File>
 </CodeBlocks_layout_file>

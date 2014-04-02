@@ -31,6 +31,8 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="judge_client.cc" />
+		<Unit filename="okcalls.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />
