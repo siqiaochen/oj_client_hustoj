@@ -1,0 +1,26 @@
+# depslib dependency file v1.0
+1396467170 source:/home/arm11/Projects/oj/oj_client_hustoj/judge_client.cc
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<dirent.h>
+	<unistd.h>
+	<time.h>
+	<stdarg.h>
+	<ctype.h>
+	<sys/wait.h>
+	<sys/ptrace.h>
+	<sys/types.h>
+	<sys/user.h>
+	<sys/syscall.h>
+	<sys/time.h>
+	<sys/resource.h>
+	<sys/signal.h>
+	<sys/stat.h>
+	<unistd.h>
+	<assert.h>
+	"okcalls.h"
+
+1395689076 /home/arm11/Projects/oj/oj_client_hustoj/okcalls.h
+	<sys/syscall.h>
+
