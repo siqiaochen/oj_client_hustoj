@@ -1084,9 +1084,9 @@ void run_solution(int & lang, char * work_dir, int & time_lmt, int & usedtime,
     if (lang != 3)
         chroot(work_dir);
 
-    while(setgid(1536)!=0) sleep(1);
-    while(setuid(1536)!=0) sleep(1);
-    while(setresuid(1536, 1536, 1536)!=0) sleep(1);
+    //while(setgid(1536)!=0) sleep(1);
+    //while(setuid(1536)!=0) sleep(1);
+    //while(setresuid(1536, 1536, 1536)!=0) sleep(1);
 
 //      char java_p1[BUFFER_SIZE], java_p2[BUFFER_SIZE];
     // child
@@ -1521,7 +1521,15 @@ void init_parameters(int argc, char ** argv, int & lang, int & time_lmt, int & m
         fprintf(stderr,
                 "Debug:%s solution_id runner_id judge_base_path debug.\n",
                 argv[0]);
-        exit(1);
+        //exit(1);
+
+        lang = 0;
+        time_lmt = 10;
+        mem_lmt = 10;
+        strcpy(oj_home, "/home/judge");
+        chdir(oj_home);
+        DEBUG=1;
+        return;
     }
     DEBUG = (argc > 6);
     record_call=(argc > 7);
@@ -1652,6 +1660,7 @@ int main(int argc, char** argv)
 
     init_mysql_conf();
 
+    http_judge = 1;
     if (!http_judge)
     {
         exit(0); //exit if mysql is down
@@ -1666,8 +1675,8 @@ int main(int argc, char** argv)
         clean_workdir(work_dir);
 
 
-    if(http_judge)
-        system("ln -s ../cookie ./");
+    //if(http_judge)
+    //    system("ln -s ../cookie ./");
     //get the limit
 
     //copy source file
