@@ -601,6 +601,11 @@ void login()
 void update_solution(int result, int time, int memory,int sim, int sim_s_id,double pass_rate)
 {
     if(result==OJ_TL&&memory==0) result=OJ_ML;
+    char s[BUFFER_SIZE];
+    sprintf(s,"%s/log/result",oj_home);
+    FILE *res=fopen(s,"w");
+    fprintf(res,"%d %d %d\n",result,time,memory);
+    fclose(res);
 }
 /* write compile error message back to database */
 // urlencoded function copied from http://www.geekhideout.com/urlcode.shtml
@@ -899,7 +904,7 @@ void prepare_files(char * filename, int namelen, char * infile,
     execute_cmd("cp %s %s/data.in", infile, work_dir);
     execute_cmd("cp %s/data/*.dic %s/", oj_home,work_dir);
 
-    sprintf(outfile, "%s/data/s.out", oj_home, fname);
+    sprintf(outfile, "%s/data/%s.out", oj_home, fname);
     sprintf(userfile, "%s/run/user.out", oj_home);
 }
 

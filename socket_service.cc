@@ -11,11 +11,13 @@
 #include "cJSON.h"
 #define MAX_BUF 1048576
 #define MAX_CMD 20
-int cmd_status;
-char* oj_file = "./judgeclient";
+int solve_progress;
+pid_t client_pid;
+
 void init_oj()
 {
-    cmd_status = 0;
+    solve_progress = 0;
+    client_pid = 0;
 }
 void writefile( char* fname, char* buf, int size)
 {
@@ -44,10 +46,11 @@ void parse_cjson(char* str)
     cJSON* unit_test = NULL;
     char filename[256];
     char * solution;
-    sprintf(filename,"~/code/main.c");
+    sprintf(filename,"/home/judge/run/Main.c");
     solution = (char *)base64_decode((const char*)solution_64,
                               strlen(solution_64),
                              &input_len);
+    printf("main.c : %s",solution);
     writefile(filename,solution,input_len);
     free(solution);
     for(i =0; i< cJSON_GetArraySize(unit_tests);i++)
@@ -60,13 +63,13 @@ void parse_cjson(char* str)
         in_str = (char *)base64_decode((const char*)in_str_64,
                               strlen(in_str_64),
                              &input_len);
-        sprintf(filename,"~/testdata/%d.in",i);
+        sprintf(filename,"/home/judge/data/%d.in",i);
         writefile(filename,in_str,input_len);
         out_str_64 = cJSON_GetObjectItem(unit_test,"out")->valuestring;
         out_str = (char *)base64_decode((const char*)out_str_64,
                               strlen(out_str_64),
                              &input_len);
-        sprintf(filename,"~/testdata/%d.out",i);
+        sprintf(filename,"/home/judge/data%d.out",i);
         writefile(filename,out_str,sizeof(out_str));
         free(in_str);
         free(out_str);
@@ -76,6 +79,60 @@ void parse_cjson(char* str)
 
     //parse_object()
 }
+pid_t solve_problem()
+{
+
+    //pid_t parent = getpid();
+    pid_t pid = fork();
+    int status;
+
+    if (pid < 0)
+    {
+        // error, failed to fork()
+        exit(1);
+    }
+    else if (pid > 0)
+    {
+        waitpid(pid,&status,0);
+        printf("judged\n");
+        return pid;
+    }
+    else
+    {
+        // we are the child
+        printf("start judge\n");
+        execv("/home/csq/oj/oj_client_hustoj/bin/Debug/oj_client",NULL);
+        exit(0);   // exec never returns
+    }
+}
+char* update_solution(size_t* output_size)
+{
+    char oj_result[255];
+    char* buffer;
+    char* return_buf;
+    int size = 0;
+    size_t result;
+    strcpy(oj_result, "/home/judge/log/result");
+    FILE *fp = fopen(oj_result,"rb");
+    if(fp == NULL)
+        exit(1);
+    printf("read result\n");
+    fseek(fp,0,SEEK_END);
+    size = ftell(fp);
+    fseek(fp,0,SEEK_SET);
+    buffer = (char*) malloc(sizeof(char)*size);
+    result = fread(buffer,1,size,fp);
+     if(result != size)
+        exit(1);
+    fclose(fp);
+
+    printf("convert result to base 64\n");
+    return_buf = base64_encode((unsigned char *)buffer,size,output_size);
+    free(buffer);
+
+    printf("return result\n");
+    return return_buf;
+}
 void process_message(int sock, char* buf, int len)
 {
     char input_buf[MAX_BUF];
@@ -83,7 +140,11 @@ void process_message(int sock, char* buf, int len)
     char* param_b64;
     char* input_str;
     int n = 0;
+    int status = 0;
     size_t input_len;
+    size_t output_len;
+    char* output_str;
+    pid_t result;
     memcpy(input_buf,buf,len);
     input_buf[len] = 0;
     cmd = strtok(input_buf," \r\n");
@@ -100,11 +161,20 @@ void process_message(int sock, char* buf, int len)
     }
     else if(strcmp(cmd,"status")==0)
     {
-        n = write(sock,"starting\n",5);
-        if (n < 0)
+        if(solve_progress < 1)
         {
-            perror("ERROR reading from socket");
-            exit(1);
+            n = write(sock,"starting\n",9);
+            if (n < 0)
+            {
+                perror("ERROR reading from socket");
+                exit(1);
+            }
+        }
+        else
+        {
+            result = waitpid(client_pid, &status, WNOHANG);
+            if(result == 0)
+                n = write(sock,"processing\n",11);
         }
     }
     else if(strcmp(cmd,"exit")==0)
@@ -126,7 +196,19 @@ void process_message(int sock, char* buf, int len)
                               strlen(param_b64),
                              &input_len);
         printf("Client write solve info: %s\n",input_str);
+        parse_cjson(input_str);
+        //execl("./Main", "./Main", (char *)NULL);
         free(input_str);
+        printf("solve problem\n");
+        client_pid = solve_problem();
+        solve_progress = 1;
+        output_str = update_solution(&output_len);
+        printf("result: %s\n",output_str);
+        solve_progress = 2;
+        write(sock,"solution ",9);
+        write(sock, output_str, output_len);
+        write(sock,"\n",1);
+        exit(0);
     }
     else
     {
@@ -175,9 +257,9 @@ int main( int argc, char *argv[] )
 {
     int sockfd, newsockfd, portno;
     unsigned int clilen;
-    char buffer[256];
+    //char buffer[256];
     struct sockaddr_in serv_addr, cli_addr;
-    int  n;
+    //int  n;
     int pid = -1;
     int current_connection = 0;
     pid_t result = 0;
