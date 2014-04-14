@@ -58,19 +58,21 @@ void parse_cjson(char* str)
         in_str = NULL;
         out_str = NULL;
         unit_test = cJSON_GetArrayItem(unit_tests,i);
-        in_str_64 = cJSON_GetObjectItem(unit_test,"in")->valuestring;
+        in_str_64 = cJSON_GetObjectItem(unit_test,"data_in")->valuestring;
 
         in_str = (char *)base64_decode((const char*)in_str_64,
                               strlen(in_str_64),
                              &input_len);
         sprintf(filename,"/home/judge/data/%d.in",i);
+        printf("data in : %s",in_str);
         writefile(filename,in_str,input_len);
-        out_str_64 = cJSON_GetObjectItem(unit_test,"out")->valuestring;
+        out_str_64 = cJSON_GetObjectItem(unit_test,"data_out")->valuestring;
         out_str = (char *)base64_decode((const char*)out_str_64,
                               strlen(out_str_64),
                              &input_len);
-        sprintf(filename,"/home/judge/data%d.out",i);
-        writefile(filename,out_str,sizeof(out_str));
+        sprintf(filename,"/home/judge/data/%d.out",i);
+        printf("data out : %s",out_str);
+        writefile(filename,out_str,input_len);
         free(in_str);
         free(out_str);
     }
