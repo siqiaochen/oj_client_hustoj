@@ -1531,7 +1531,7 @@ void init_parameters(int argc, char ** argv, int & lang, int & time_lmt, int & m
         lang = 0;
         time_lmt = 10;
         mem_lmt = 10;
-        strcpy(oj_home, "/home/judge");
+        strcpy(oj_home, "/home/judger");
         chdir(oj_home);
         DEBUG=1;
         return;
@@ -1545,7 +1545,7 @@ void init_parameters(int argc, char ** argv, int & lang, int & time_lmt, int & m
     if (argc > 4)
         strcpy(oj_home, argv[4]);
     else
-        strcpy(oj_home, "/home/judge");
+        strcpy(oj_home, "/home/judger");
 
     chdir(oj_home); // change the dir// init our work
 
