@@ -46,7 +46,7 @@ void parse_cjson(char* str)
     cJSON* unit_test = NULL;
     char filename[256];
     char * solution;
-    sprintf(filename,"/home/judge/run/Main.c");
+    sprintf(filename,"/home/judger/run/Main.c");
     solution = (char *)base64_decode((const char*)solution_64,
                               strlen(solution_64),
                              &input_len);
@@ -63,14 +63,14 @@ void parse_cjson(char* str)
         in_str = (char *)base64_decode((const char*)in_str_64,
                               strlen(in_str_64),
                              &input_len);
-        sprintf(filename,"/home/judge/data/%d.in",i);
+        sprintf(filename,"/home/judger/data/%d.in",i);
         printf("data in : %s",in_str);
         writefile(filename,in_str,input_len);
         out_str_64 = cJSON_GetObjectItem(unit_test,"data_out")->valuestring;
         out_str = (char *)base64_decode((const char*)out_str_64,
                               strlen(out_str_64),
                              &input_len);
-        sprintf(filename,"/home/judge/data/%d.out",i);
+        sprintf(filename,"/home/judger/data/%d.out",i);
         printf("data out : %s",out_str);
         writefile(filename,out_str,input_len);
         free(in_str);
@@ -114,7 +114,7 @@ char* update_solution(size_t* output_size)
     char* return_buf;
     int size = 0;
     size_t result;
-    strcpy(oj_result, "/home/judge/log/result");
+    strcpy(oj_result, "/home/judger/log/result");
     FILE *fp = fopen(oj_result,"rb");
     if(fp == NULL)
         exit(1);
