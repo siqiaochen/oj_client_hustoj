@@ -103,7 +103,7 @@ pid_t solve_problem()
     {
         // we are the child
         printf("start judge\n");
-        execv("/home/csq/oj/oj_client_hustoj/bin/Debug/oj_client",NULL);
+        execv("./oj_client",NULL);
         exit(0);   // exec never returns
     }
 }
