@@ -46,6 +46,7 @@ void parse_cjson(char* str)
     cJSON* unit_test = NULL;
     char filename[256];
     char * solution;
+    system("rm -rf /home/judger/data/*");
     sprintf(filename,"/home/judger/run/Main.c");
     solution = (char *)base64_decode((const char*)solution_64,
                               strlen(solution_64),
